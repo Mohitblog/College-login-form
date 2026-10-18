@@ -151,7 +151,7 @@ public class Main extends JFrame {
     }
 
     private boolean loginUser(String username, String password) {
-        try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/login_form", "root", "Mohit@1234");
+        try (Connection connection = getConnection();
              PreparedStatement pst = connection.prepareStatement("SELECT * FROM users WHERE username = ? AND password = ?")) {
             pst.setString(1, username);
             pst.setString(2, password);
@@ -168,7 +168,7 @@ public class Main extends JFrame {
     }
 
     private boolean executeUpdate(String query, String... params) {
-        try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/login_form", "root", "Mohit@1234");
+        try (Connection connection = getConnection();
              PreparedStatement pst = connection.prepareStatement(query)) {
             for (int i = 0; i < params.length; i++) {
                 pst.setString(i + 1, params[i]);
@@ -178,6 +178,18 @@ public class Main extends JFrame {
             e.printStackTrace();
             return false;
         }
+    }
+
+    // Reads the database settings from environment variables so no password is stored in the code.
+    // Required: DB_PASSWORD. Optional: DB_USER (default "root") and DB_URL.
+    private static Connection getConnection() throws SQLException {
+        String url = System.getenv().getOrDefault("DB_URL", "jdbc:mysql://localhost:3306/login_form");
+        String user = System.getenv().getOrDefault("DB_USER", "root");
+        String password = System.getenv("DB_PASSWORD");
+        if (password == null) {
+            throw new SQLException("The DB_PASSWORD environment variable is not set.");
+        }
+        return DriverManager.getConnection(url, user, password);
     }
 
     private String generateRandomString(int length) {
